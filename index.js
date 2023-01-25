@@ -20,7 +20,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
     try{
         const serviceCollections = client.db('servicereviewwebsite').collection('services');
-         const userServiceComment = client.db('servicereviewwebsite').collection('usersComment')
+         const userServiceComment = client.db('servicereviewwebsite').collection('usersComment');
          const addServicesCollections = client.db('servicereviewwebsite').collection('addServices')
 
 
@@ -46,33 +46,42 @@ async function run(){
             res.send(resualt)
         })
 
-        //comment
+        //user comment post
         app.post('/comments', async(req,res) =>{
             const users = req.body;
-            const resualt = await userServiceComment.insertOne(users)
+            const resualt = await  userServiceComment.insertOne(users)
             res.send(resualt)
         })
         //comment get:
         app.get('/comments', async(req,res) => {
             const query = {}
             const resualt = await userServiceComment.find(query).toArray()
+            console.log(resualt);
             res.send(resualt)
         })
+
+         
+        //get comments by email
+        app.get(`/commentss`, async(req,res) => {
+            //console.log(req.query.email)
+            let query = {}
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+            const resualt = await userServiceComment.find(query).toArray();
+            res.send(resualt);
+        })
+
         //delete user comment:
         app.delete('/reviewdelete/:id', async(req,res)=>{
             const id = req.params.id;
-            console.log(id)
             const query ={_id: ObjectId(id)}
             const resualt = await userServiceComment.deleteOne(query);
             res.send(resualt)
         })
-        //get comments by email
-        app.get('/comments', async(req,res) => {
-            const user = req.body;
-            const query = {email : email}
-            const resualt = await userServiceComment.find(query).toArray()
-            res.send(resualt)
-        })
+         
 
         //post my service
         app.post('/addservices', async(req,res)=>{
@@ -81,13 +90,33 @@ async function run(){
             res.send(resualt)
         })
 
-        app.get('/addservices', async (req, res) => {
+        //get users add services
+        app.get('/addservices', async (req, res) => {            
             const query = {}
             const cursor = await addServicesCollections.find(query).toArray();
             res.send(cursor);
         })
+
+    // specific user added service data by email query:
+    app.get('/addservicess', async (req, res) => {
+        console.log(req.query.email)
+            let query = {}
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+            const  resualt = await addServicesCollections.find(query).toArray();
+            res.send(resualt);
+        })
         
-        
+        //delete my added service
+        app.delete(`/servicedelete/:id`, async(req,res)=>{
+            const id = req.params.id;
+            const query ={_id: ObjectId(id)}
+            const resualt = await addServicesCollections.deleteOne(query);
+            res.send(resualt)
+        })
 
 
     }
