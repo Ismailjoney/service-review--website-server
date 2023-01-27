@@ -1,6 +1,7 @@
 const express = require(`express`)
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -10,11 +11,31 @@ app.use(cors())
 app.use(express.json());
 
 
-
- 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.i8hxp3j.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
  
+function tokenVerify(req, res, next){
+    const authHeader = req.headers.authoraization;
+     
+    if(!authHeader){
+        return res.status(401).send({message: 'unautharized access'})
+    }
+
+    const token = authHeader.split(` `)[1]
+
+    //token match koranor kaj kora hoyece
+    jwt.verify(token, process.env.SECRET_WEB_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message: `forbidden access`})
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
+
 
 
 async function run(){
@@ -23,6 +44,14 @@ async function run(){
          const userServiceComment = client.db('servicereviewwebsite').collection('usersComment');
          const addServicesCollections = client.db('servicereviewwebsite').collection('addServices')
 
+
+        //Jwt token :
+        app.post(`/jwt`, (req,res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.SECRET_WEB_TOKEN, {expiresIn: `7d`});
+            res.send({token})
+        })
+       
 
         //use limit 3
         app.get('/services', async (req, res) => {
@@ -62,8 +91,13 @@ async function run(){
 
          
         //get comments by email
-        app.get(`/commentss`, async(req,res) => {
-            //console.log(req.query.email)
+        app.get(`/commentss`, tokenVerify, async(req,res) => {
+            const decoded = req.decoded;
+           
+            if(decoded.email !== req.query.email){
+                res.status(403).send({message: `unauthoraized access`})
+            }
+
             let query = {}
             if (req.query.email) {
                 query = {
@@ -90,16 +124,21 @@ async function run(){
             res.send(resualt)
         })
 
-        //get users add services
-        app.get('/addservices', async (req, res) => {            
+        //get add services
+        app.get('/addservices', async (req, res) => {      
             const query = {}
             const cursor = await addServicesCollections.find(query).toArray();
             res.send(cursor);
         })
 
-    // specific user added service data by email query:
-    app.get('/addservicess', async (req, res) => {
-        console.log(req.query.email)
+    // specific user added service data by email query:(my addservice route)
+    app.get('/addservicess', tokenVerify, async (req, res) => {
+        //console.log(req.query.email)
+        const decoded = req.decoded;
+           
+            if(decoded.email !== req.query.email){
+                res.status(403).send({message: 'unauthorized access'})
+            }
             let query = {}
             if (req.query.email) {
                 query = {
