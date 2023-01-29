@@ -17,25 +17,24 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
  
 function tokenVerify(req, res, next){
-    const authHeader = req.headers.authoraization;
+    const authHeader = req.headers.authorization;
      
-    if(!authHeader){
-        return res.status(401).send({message: 'unautharized access'})
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' });
     }
 
     const token = authHeader.split(` `)[1]
 
-    //token match koranor kaj kora hoyece
+    //token match & email check
     jwt.verify(token, process.env.SECRET_WEB_TOKEN, function(err, decoded){
-        if(err){
-            return res.status(403).send({message: `forbidden access`})
+        if (err) {
+            console.log(err)
+            return res.status(403).send({ message: 'Forbidden access' });
         }
         req.decoded = decoded;
-        next()
+        next();
     })
 }
-
-
 
 
 async function run(){
@@ -48,7 +47,7 @@ async function run(){
         //Jwt token :
         app.post(`/jwt`, (req,res) => {
             const user = req.body;
-            const token = jwt.sign(user, process.env.SECRET_WEB_TOKEN, {expiresIn: `7d`});
+            const token = jwt.sign(user, process.env.SECRET_WEB_TOKEN, {expiresIn: `10d`});
             res.send({token})
         })
        
@@ -85,17 +84,16 @@ async function run(){
         app.get('/comments', async(req,res) => {
             const query = {}
             const resualt = await userServiceComment.find(query).toArray()
-            console.log(resualt);
             res.send(resualt)
         })
 
          
         //get comments by email
-        app.get(`/commentss`, tokenVerify, async(req,res) => {
+        app.get(`/reviews`, tokenVerify, async(req,res) => {
             const decoded = req.decoded;
            
             if(decoded.email !== req.query.email){
-                res.status(403).send({message: `unauthoraized access`})
+                res.status(403).send({message: 'unauthoraized access'})
             }
 
             let query = {}
@@ -132,7 +130,7 @@ async function run(){
         })
 
     // specific user added service data by email query:(my addservice route)
-    app.get('/addservicess', tokenVerify, async (req, res) => {
+    app.get('/addservicess', tokenVerify,  async (req, res) => {
         //console.log(req.query.email)
         const decoded = req.decoded;
            

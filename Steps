@@ -4,3 +4,26 @@ Jwt create:
 3 go to terminal and write node then pren enter
 4 write this--> require(`crypto`).randomBytes(64).toString(`hex`) then press enter and create a json web token 
 5 set .env file and use this token
+
+
+
+
+
+
+
+vercel deploy code 
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "./index.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        }
+    ]
+}
