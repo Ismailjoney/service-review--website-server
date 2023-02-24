@@ -88,7 +88,7 @@ async function run(){
         })
 
          
-        //get comments by email
+        //get comments by email..
         app.get(`/reviews`, tokenVerify, async(req,res) => {
             const decoded = req.decoded;
            
